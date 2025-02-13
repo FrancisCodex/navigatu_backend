@@ -15,14 +15,14 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'in:admin,leader', // Only allow admin or leader roles
+            'role' => 'in:admin,incubatee', // Only allow admin or leader roles
         ]);
     
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'leader', // Default to leader if role not provided
+            'role' => $request->role ?? 'incubatee', // Default to leader if role not provided
         ]);
     
         $token = $user->createToken('auth_token')->plainTextToken;

@@ -4,21 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Appointment extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
 
     protected $fillable = [
         'mentor_id',
         'leader_id',
-        'appointment_date',
+        'date', 
         'status',
     ];
 
     protected $casts = [
-        'appointment_date' => 'datetime',
+        'date' => 'datetime',
     ];
 
     public function mentor()

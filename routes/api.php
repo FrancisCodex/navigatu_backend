@@ -13,25 +13,26 @@ Route::get('/user', function (Request $request) {
 
 // Routes that can be accessed by Leader
 Route::middleware(['auth:sanctum', 'leader'])->group(function () {
-    Route::get('appointments', [AppointmentController::class, 'show']);
     Route::post('appointments', [AppointmentController::class, 'store']);
     Route::delete('appointments/{id}', [AppointmentController::class, 'destroy']);
 });
 
 // Routes that can be accessed by Admin and Leader
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('appointments', [AppointmentController::class, 'show']);
     Route::get('mentors', [MentorController::class, 'index']);
     Route::get('mentors/{id}', [MentorController::class, 'show']);
+    Route::post('logout', [LoginController::class, 'logout']);
+    Route::get('appointments', [AppointmentController::class, 'index']);
 });
 
 // Mentors Routes
 // Mentor Routes for Admin
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::get('mentors', [MentorController::class, 'index']);
     Route::post('mentors', [MentorController::class, 'store']);
-    Route::get('mentors/{id}', [MentorController::class, 'show']);
+    Route::delete('mentors/{id}', [MentorController::class, 'destroy']);
+    Route::put('appointments/{id}', [AppointmentController::class, 'update']);
     // All Appointments
-    Route::get('appointments', [AppointmentController::class, 'index']);
 });
 
 

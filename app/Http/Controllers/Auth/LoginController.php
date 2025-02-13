@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 
 class LoginController extends Controller
@@ -39,9 +40,9 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        // Revoke current user's tokens
-        $request->user()->tokens()->delete();
-
+        // Revoke the current user's token
+        $request->user()->currentAccessToken()->delete();
+    
         return response()->json([
             'message' => 'Logged out successfully',
         ], 204);

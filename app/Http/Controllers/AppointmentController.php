@@ -15,13 +15,32 @@ class AppointmentController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        $leaderId = Auth::user()->id; // Assuming 'leader_id' is the user's ID
-        $appointments = Appointment::where('leader_id', $leaderId)->get();
+{
+    $user = Auth::user();
 
-        return response()->json($appointments, 200);
+    if ($user->isAdmin()) {
+        // Admin can view all appointments
+        $appointments = Appointment::with(['leader', 'mentor'])->get();
+    } else {
+        // Leader can view only their own appointments
+        $leaderId = $user->id;
+        $appointments = Appointment::with(['leader', 'mentor'])->where('leader_id', $leaderId)->get();
     }
 
+    // Format the response
+    $formattedAppointments = $appointments->map(function ($appointment) {
+        return [
+            'id' => $appointment->id,
+            'incubateeName' => $appointment->leader ? $appointment->leader->name : 'N/A', // Fetch incubatee name from the leader relationship
+            'mentorName' => $appointment->mentor ? $appointment->mentor->firstName . ' ' . $appointment->mentor->lastName : 'N/A',
+            'date' => $appointment->date,
+            'status' => $appointment->status,
+            'requestedAt' => $appointment->created_at,
+        ];
+    });
+
+    return response()->json($formattedAppointments, 200);
+}
     /**
      * Show the form for creating a new resource.
      */
@@ -37,11 +56,11 @@ class AppointmentController extends Controller
     {
         $validated = $request->validate([
             'mentor_id' => 'required|exists:mentors,id',
-            'appointment_date' => 'required|date|after:today',
+            'date' => 'required|date|after:today',
         ]);
 
         $leaderId = Auth::user()->id;
-
+        
         // Check if leader already has an active appointment
         $existingAppointment = Appointment::where('leader_id', $leaderId)
             ->whereIn('status', ['pending', 'approved']) // Active appointments
@@ -52,10 +71,9 @@ class AppointmentController extends Controller
         }
 
         $appointment = Appointment::create([
-            'id' => Str::uuid(),
             'mentor_id' => $validated['mentor_id'],
             'leader_id' => $leaderId,
-            'appointment_date' => $validated['appointment_date'],
+            'date' => $validated['date'],
             'status' => 'pending',
         ]);
 
@@ -95,7 +113,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::findOrFail($id);
 
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected,cancelled',
+            'status' => 'required|in:accepted,declined,cancelled, completed',
         ]);
 
         $appointment->update(['status' => $validated['status']]);
