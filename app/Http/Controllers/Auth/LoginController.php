@@ -17,6 +17,7 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'user_type' => 'required',
         ]);
 
         // Find user by email
@@ -24,16 +25,25 @@ class LoginController extends Controller
         // Check if user exists and password is correct
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message' => 'Invalid credentials'
+                'message' => 'Invalid credentials or user type'
             ], 401);
         }
 
-        // Generate API token using Sanctum 
+        // Check if the user_type matches the user's role
+        if (($request->user_type === 'admin' && $user->role !== 'admin') ||
+        ($request->user_type === 'incubatee' && $user->role !== 'incubatee')) {
+        return response()->json([
+            'message' => 'Invalid Credentials or user type'
+        ], 401);
+}
+
+        // Generate API token using Sanctum with token expiration
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'token' => $token,
             'token_type' => 'Bearer',
+            'user' => $user,
             'message' => 'Login successful',
         ]);
     }
