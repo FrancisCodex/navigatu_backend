@@ -64,7 +64,6 @@ class ActivityController extends Controller
             'module' => 'required|string',
             'session' => 'required|string',
             'activity_description' => 'nullable|string',
-            'status' => 'required|string',
             'speaker_name' => 'required|string',
             'TBI' => 'required|string',
             'due_date' => 'required|date',

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Submission;
+use App\Models\Activity;
+use App\Models\User;
+use App\Models\StartupProfile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -11,9 +14,31 @@ use Illuminate\Http\Request;
 class SubmissionController extends Controller
 {
     //
-    public function index()
+    public function index($activityId)
     {
-        return response()->json(Submission::all(), 200);
+        //get all the submissions for a specific activity get the user name, startup name, activity name
+        $submissions = Submission::where('activity_id', $activityId)->get();
+
+        //get the name of the users who submitted the output
+        $submissions->transform(function ($submission) {
+            $user = User::findOrFail($submission->user_id);
+            $activity = Activity::findOrFail($submission->activity_id);
+            $startupProfile = StartupProfile::where('leader_id', $user->id)->first();
+
+            return [
+                'id' => $submission->id,
+                'leader_name' => $user->name,
+                'startup_name' => $startupProfile->startup_name,
+                'activity_name' => $activity->activity_name,
+                'activity_id' => $submission->activity_id,
+                'user_id' => $submission->user_id,
+                'file_path' => $submission->file_path,
+                'submission_date' => $submission->created_at,
+                'graded' => $submission->graded,
+            ];
+        });
+
+        return response()->json($submissions);
     }
 
     public function store(Request $request, $id)
@@ -38,7 +63,23 @@ class SubmissionController extends Controller
     public function show($id)
     {
         $submission = Submission::findOrFail($id);
-        return response()->json($submission, 200);
+        $user = User::findOrFail($submission->user_id);
+        $activity = Activity::findOrFail($submission->activity_id);
+        $startupProfile = StartupProfile::where('leader_id', $user->id)->first();
+
+        $submissionData = [
+            'id' => $submission->id,
+            'leader_name' => $user->name,
+            'startup_name' => $startupProfile ? $startupProfile->startup_name : 'N/A',
+            'activity_name' => $activity->activity_name,
+            'activity_id' => $submission->activity_id,
+            'user_id' => $submission->user_id,
+            'file_path' => $submission->file_path,
+            'submission_date' => $submission->created_at,
+            'graded' => $submission->graded,
+        ];
+
+        return response()->json($submissionData, 200);
     }
     
 
@@ -74,6 +115,22 @@ class SubmissionController extends Controller
         ]);
     }
 
+    public function gradeSubmission(Request $request, $id)
+    {
+        // Validate the request to ensure 'grade' is present and is a boolean
+        $validated = $request->validate([
+            'grade' => 'required|boolean',
+        ]);
+
+        // Check if the grade is true
+        if ($validated['grade'] === true) {
+            $submission = Submission::findOrFail($id);
+            $submission->update(['graded' => true]);
+            return response()->json(['message' => 'Submission Graded', 'submission' => $submission], 200);
+        }
+
+        return response()->json(['message' => 'Invalid grade value'], 400);
+    }
 
 
 

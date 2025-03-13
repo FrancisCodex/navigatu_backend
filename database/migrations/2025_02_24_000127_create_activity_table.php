@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('activity_name');
             $table->string('module');
             $table->string('session');
-            $table->string('activity_description');
+            $table->text('activity_description');
             $table->string('speaker_name');
             $table->string('TBI');
             $table->date('due_date');

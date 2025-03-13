@@ -14,10 +14,15 @@ class Submission extends Model
         'activity_id',
         'user_id',
         'file_path',
+        'graded',
     ];
 
     public function activity()
     {
         return $this->belongsTo(Activity::class);
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

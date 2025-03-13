@@ -18,13 +18,21 @@ class StartupProfileController extends Controller
 {
     public function index()
     {
-        $startupProfiles = StartupProfile::all();
+        $user = Auth::user();
 
-        // Add total_members to each startup profile
+        if ($user->role === 'admin') {
+            // Admin can access all startup profiles
+            $startupProfiles = StartupProfile::all();
+        } else {
+            // Incubatees can only access their own startup profile
+            $startupProfiles = StartupProfile::where('leader_id', $user->id)->get();
+        }
+
+        // Add total_members and leader_name to each startup profile
         $startupProfiles = $startupProfiles->map(function ($startupProfile) {
             $totalMembers = Member::where('startup_profile_id', $startupProfile->id)->count();
             $startupProfile->total_members = $totalMembers;
-            // add leaders name here get the leaders name from the user table
+            // Add leader's name
             $leader = User::findOrFail($startupProfile->leader_id);
             $startupProfile->leader_name = $leader->name;
             return $startupProfile;

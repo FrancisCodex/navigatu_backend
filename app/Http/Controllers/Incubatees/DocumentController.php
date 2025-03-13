@@ -51,9 +51,9 @@ class DocumentController extends Controller
     public function upload(Request $request, $startup_profile_id)
     {
         $request->validate([
-            'dti_registration' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
-            'bir_registration' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
-            'sec_registration' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
+            'dti_registration' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
+            'bir_registration' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
+            'sec_registration' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
         ]);
 
         try {
@@ -65,13 +65,35 @@ class DocumentController extends Controller
 
             $documentTypes = ['dti_registration', 'bir_registration', 'sec_registration'];
             $uploadedPaths = [];
+            $userFolder = "business-documents/user_{$startupProfile->leader_id}";
+
+            // Check if all required files are already uploaded
+            $allFilesUploaded = true;
+            foreach ($documentTypes as $documentType) {
+                if (empty($documents->$documentType)) {
+                    $allFilesUploaded = false;
+                    break;
+                }
+            }
+
+            if ($allFilesUploaded) {
+                return response()->json([
+                    'message' => 'Already uploaded all required files'
+                ], 400);
+            }
 
             foreach ($documentTypes as $documentType) {
                 if ($request->hasFile($documentType)) {
+                    if (!empty($documents->$documentType)) {
+                        return response()->json([
+                            'message' => "The {$documentType} file has already been uploaded"
+                        ], 400);
+                    }
+
                     $file = $request->file($documentType);
                     $extension = $file->getClientOriginalExtension();
                     $fileName = "{$startupProfile->startup_name}_{$documentType}.{$extension}";
-                    $filePath = $file->storeAs('business-documents', $fileName, 'public');
+                    $filePath = $file->storeAs($userFolder, $fileName, 'public');
                     $documents->$documentType = $filePath;
                     $uploadedPaths[$documentType] = $filePath;
                 }
@@ -88,6 +110,29 @@ class DocumentController extends Controller
                 'message' => 'Error uploading documents',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function destroy($documentId)
+    {
+        try {
+            // Find the document
+            $document = Document::findOrFail($documentId);
+
+            // Delete the document files from storage
+            $documentTypes = ['dti_registration', 'bir_registration', 'sec_registration'];
+            foreach ($documentTypes as $documentType) {
+                if ($document->$documentType) {
+                    Storage::disk('public')->delete($document->$documentType);
+                }
+            }
+
+            // Delete the document record from the database
+            $document->delete();
+
+            return response()->json(['message' => 'Document deleted successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting document', 'error' => $e->getMessage()], 500);
         }
     }
 

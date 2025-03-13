@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('activity_id')->constraint()->onDelete('cascade');
             $table->unsignedBigInteger('user_id')->constraint()->onDelete('cascade');
             $table->string('file_path');
+            $table->boolean('graded')->default(false);
 
             // Foreign keys
             $table->foreign('activity_id')->references('id')->on('activity')->onDelete('cascade');
