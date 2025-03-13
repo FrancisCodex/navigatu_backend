@@ -50,6 +50,6 @@ class User extends Authenticatable
 
     public function isLeader()
     {
-        return $this->role === 'leader';
+        return $this->role === 'incubatee';
     }
 }
