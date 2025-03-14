@@ -77,6 +77,45 @@ class DashboardDataController extends Controller
 
         // Get documents of the startup team
         $documents = Document::where('startup_profile_id', $startupProfile->id)->get();
+        $documents = $documents->map(function ($document) {
+            $fileDetails = [];
+
+            if ($document->dti_registration) {
+                $fileDetails[] = [
+                    // 'file_path' => Storage::disk('public')->url($document->dti_registration),
+                    'file_path' => Storage::url($document->dti_registration),
+                    'file_name' => basename($document->dti_registration),
+                    'file_type' => 'DTI Registration',
+                    'file_size' => Storage::disk('public')->size($document->dti_registration),
+                ];
+            }
+
+            if ($document->bir_registration) {
+                $fileDetails[] = [
+                    // 'file_path' => Storage::disk('public')->url($document->bir_registration),
+                    'file_path' => Storage::url($document->bir_registration),
+                    'file_name' => basename($document->bir_registration),
+                    'file_type' => 'BIR Registration',
+                    'file_size' => Storage::disk('public')->size($document->bir_registration),
+                ];
+            }
+
+            if ($document->sec_registration) {
+                $fileDetails[] = [
+                    // 'file_path' => Storage::disk('public')->url($document->sec_registration),
+                    'file_path' => Storage::url($document->sec_registration),
+                    'file_name' => basename($document->sec_registration),
+                    'file_type' => 'SEC Registration',
+                    'file_size' => Storage::disk('public')->size($document->sec_registration),
+                ];
+            }
+
+            return [
+                'id' => $document->id,
+                'startup_profile_id' => $document->startup_profile_id,
+                'files' => $fileDetails,
+            ];
+        });
 
         // Get activities submitted by the startup team and include leader's name
         $submissions = Submission::where('user_id', $startupProfile->leader_id)
@@ -340,7 +379,8 @@ class DashboardDataController extends Controller
 
             if ($document->dti_registration) {
                 $fileDetails[] = [
-                    'file_path' => Storage::disk('public')->url($document->dti_registration),
+                    // 'file_path' => Storage::disk('public')->url($document->dti_registration),
+                    'file_path' => Storage::url($document->dti_registration),
                     'file_name' => basename($document->dti_registration),
                     'file_type' => 'DTI Registration',
                     'file_size' => Storage::disk('public')->size($document->dti_registration),
@@ -349,7 +389,8 @@ class DashboardDataController extends Controller
 
             if ($document->bir_registration) {
                 $fileDetails[] = [
-                    'file_path' => Storage::disk('public')->url($document->bir_registration),
+                    // 'file_path' => Storage::disk('public')->url($document->bir_registration),
+                    'file_path' => Storage::url($document->bir_registration),
                     'file_name' => basename($document->bir_registration),
                     'file_type' => 'BIR Registration',
                     'file_size' => Storage::disk('public')->size($document->bir_registration),
@@ -358,7 +399,8 @@ class DashboardDataController extends Controller
 
             if ($document->sec_registration) {
                 $fileDetails[] = [
-                    'file_path' => Storage::disk('public')->url($document->sec_registration),
+                    // 'file_path' => Storage::disk('public')->url($document->sec_registration),
+                    'file_path' => Storage::url($document->sec_registration),
                     'file_name' => basename($document->sec_registration),
                     'file_type' => 'SEC Registration',
                     'file_size' => Storage::disk('public')->size($document->sec_registration),

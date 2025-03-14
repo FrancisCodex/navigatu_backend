@@ -52,4 +52,8 @@ class User extends Authenticatable
     {
         return $this->role === 'incubatee';
     }
+
+    public function startupProfile() {
+        return $this->hasOne(StartupProfile::class, 'leader_id');
+    }
 }

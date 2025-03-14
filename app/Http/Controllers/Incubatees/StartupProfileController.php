@@ -16,20 +16,28 @@ use Illuminate\Support\Facades\Auth;
 
 class StartupProfileController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        if ($user->role === 'admin') {
-            // Admin can access all startup profiles
-            $startupProfiles = StartupProfile::all();
-        } else {
-            // Incubatees can only access their own startup profile
-            $startupProfiles = StartupProfile::where('leader_id', $user->id)->get();
+        // Assume the user is an admin and can access all startup profiles with pagination
+        $query = StartupProfile::query();
+
+        // Check if a search query is provided
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where('startup_name', 'ILIKE', "%{$search}%")
+                ->orWhere('industry', 'ILIKE', "%{$search}%")
+                ->orWhereHas('leader', function ($q) use ($search) {
+                    $q->where('name', 'ILIKE', "%{$search}%");
+                });
         }
 
+        // Paginate the results
+        $startupProfiles = $query->paginate(6);
+
         // Add total_members and leader_name to each startup profile
-        $startupProfiles = $startupProfiles->map(function ($startupProfile) {
+        $startupProfiles->getCollection()->transform(function ($startupProfile) {
             $totalMembers = Member::where('startup_profile_id', $startupProfile->id)->count();
             $startupProfile->total_members = $totalMembers;
             // Add leader's name
@@ -95,17 +103,26 @@ class StartupProfileController extends Controller
     public function update(Request $request, $id)
     {
         $profile = StartupProfile::findOrFail($id);
+        $user = Auth::user();
 
-        $validated = $request->validate([
-            'startup_name' => 'required|string|max:255',
-            'industry' => 'required|string|max:255',
-            'leader_id' => 'required|exists:users,id',
-            'date_registered_dti' => 'nullable|date',
-            'date_registered_bir' => 'nullable|date',
-            'startup_founded' => 'required|string|max:255',
-            'startup_description' => 'nullable|string',
-            'status' => 'required|in:Active,Inactive',
-        ]);
+        if ($user->role === 'admin') {
+            // Admin can only update the status
+            $validated = $request->validate([
+                'status' => 'required|in:Active,Inactive',
+            ]);
+        } else {
+            // Other users can update all fields
+            $validated = $request->validate([
+                'startup_name' => 'required|string|max:255',
+                'industry' => 'required|string|max:255',
+                'leader_id' => 'required|exists:users,id',
+                'date_registered_dti' => 'nullable|date',
+                'date_registered_bir' => 'nullable|date',
+                'startup_founded' => 'required|string|max:255',
+                'startup_description' => 'nullable|string',
+                'status' => 'required|in:Active,Inactive',
+            ]);
+        }
 
         $profile->update($validated);
 

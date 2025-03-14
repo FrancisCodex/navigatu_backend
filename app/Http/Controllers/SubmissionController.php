@@ -110,7 +110,7 @@ class SubmissionController extends Controller
             return response()->json(['message' => 'File not found'], 404);
         }
 
-        return response()->download($path, $filename)->setHeaders([
+        return response()->download($path, $filename, [
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
