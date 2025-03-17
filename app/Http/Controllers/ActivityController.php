@@ -33,7 +33,7 @@ class ActivityController extends Controller
 
         $filepath = null;
         if ($request->hasFile('file')) {
-            $filepath = $request->file('file')->store('activities');
+            $filepath = $request->file('file')->store('activities', 'public');
         }
 
         $activity = Activity::create(
@@ -142,6 +142,27 @@ class ActivityController extends Controller
         });
 
         return response()->json($report, 200);
+    }
+
+    //download activity file
+    public function downloadActivityFile($id)
+    {
+        $activity = Activity::findOrFail($id);
+
+        if (!$activity || !$activity->activityFile_path) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        $path = $activity->activityFile_path;
+        $filename = basename($path); // Get the correct filename
+
+        if (!Storage::disk('public')->exists($path)) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        return Storage::disk('public')->download($path, $filename);
+
+        
     }
 
 

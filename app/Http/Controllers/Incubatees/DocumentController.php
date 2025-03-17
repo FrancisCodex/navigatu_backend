@@ -136,39 +136,66 @@ class DocumentController extends Controller
         }
     }
 
-    public function download($startup_profile_id, $documentType)
+    public function download($documentId)
     {
-        $startupProfile = StartupProfile::findOrFail($startup_profile_id);
+        try {
+            // Find the document
+            $document = Document::findOrFail($documentId);
 
-        $documents = Document::where('startup_profile_id', $startupProfile->id)->first();
+            // Get the startup profile details
+            $startupProfile = StartupProfile::findOrFail($document->startup_profile_id);
 
-        if (!$documents || !$documents->$documentType) {
-            return response()->json(['message' => 'Document not found'], 404);
+            // Get the authenticated user
+            $user = Auth::user();
+
+            // Check if the user is an admin or the leader of the startup
+            if ($user->role !== 'admin' && $user->id !== $startupProfile->leader_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            // Determine which document type has the file path
+            $documentTypes = ['dti_registration', 'bir_registration', 'sec_registration'];
+            $filePath = null;
+            $fileType = null;
+
+            foreach ($documentTypes as $documentType) {
+                if ($document->$documentType) {
+                    $filePath = $document->$documentType;
+                    $fileType = $documentType;
+                    break;
+                }
+            }
+
+            if (!$filePath) {
+                return response()->json(['message' => 'Document not found'], 404);
+            }
+
+            $path = storage_path("app/public/{$filePath}");
+
+            if (!file_exists($path)) {
+                return response()->json(['message' => 'File not found'], 404);
+            }
+
+            // Use PHP's built-in function to get the MIME type
+            $mimeType = mime_content_type($path);
+
+            // Fallback: Define MIME types manually for common extensions
+            if (!$mimeType) {
+                $extension = pathinfo($path, PATHINFO_EXTENSION);
+                $mimeTypes = [
+                    'jpg'  => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'png'  => 'image/png',
+                    'pdf'  => 'application/pdf',
+                    'doc'  => 'application/msword',
+                    'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ];
+                $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
+            }
+
+            return response()->download($path, basename($path), ['Content-Type' => $mimeType]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error downloading document', 'error' => $e->getMessage()], 500);
         }
-
-        $path = storage_path("app/public/{$documents->$documentType}");
-
-        if (!file_exists($path)) {
-            return response()->json(['message' => 'File not found'], 404);
-        }
-
-        // Use PHP's built-in function to get the MIME type
-        $mimeType = mime_content_type($path);
-
-        // Fallback: Define MIME types manually for common extensions
-        if (!$mimeType) {
-            $extension = pathinfo($path, PATHINFO_EXTENSION);
-            $mimeTypes = [
-                'jpg'  => 'image/jpeg',
-                'jpeg' => 'image/jpeg',
-                'png'  => 'image/png',
-                'pdf'  => 'application/pdf',
-                'doc'  => 'application/msword',
-                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            ];
-            $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
-        }
-
-        return response()->download($path, basename($path), ['Content-Type' => $mimeType]);
     }
 }

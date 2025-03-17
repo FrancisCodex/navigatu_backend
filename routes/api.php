@@ -55,6 +55,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Activity Related Routes
     Route::get('activities', [ActivityController::class, 'index']);
+    Route::get('activities/activityfile/download/{id}', [ActivityController::class, 'downloadActivityFile']);
     Route::get('activities/{id}', [ActivityController::class, 'show']);
     Route::get('submission/download/{id}', [SubmissionController::class, 'download']);
     Route::delete('activities/unsubmit/{id}', [SubmissionController::class, 'destroy']);
@@ -62,6 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Startup Routes
     Route::get('startup/{id}', [StartupProfileController::class, 'show']);
     Route::get('startup', [StartupProfileController::class, 'index']);
+    Route::put('update/startup/{id}', [StartupProfileController::class, 'update']);
 
     // Achievement routes
     Route::get('startup/achievements/{startup_profile}', [AchievementController::class, 'index']);
@@ -71,8 +73,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('startup/delete/achievement/{startup_profile_id}/{achievementId}', [AchievementController::class, 'destroy']);
 
     // Document Routes
+    Route::get('documents/download/{documentId}', [DocumentController::class, 'download']);
     Route::get('documents/{startup_profile_id}', [DocumentController::class, 'index']);
     Route::get('documents/{startup_profile_id}/{documentType}', [DocumentController::class, 'show']);
+   
 
     // Members Route
     Route::get('startup/members/{startup_profile_id}', [MemberController::class, 'index']);
@@ -114,7 +118,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     // Startup Profile Routes
     Route::post('create/startup', [StartupProfileController::class, 'store']);
-    Route::put('update/startup/{id}', [StartupProfileController::class, 'update']);
     Route::delete('delete/startup/{id}', [StartupProfileController::class, 'destroy']);
     Route::get('startup/details/{id}', [StartupProfileController::class, 'show']);
 

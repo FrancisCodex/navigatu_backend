@@ -31,4 +31,9 @@ class StartupProfile extends Model
      {
          return $this->hasMany(Achievement::class);
      }
+
+     public function leader()
+     {
+         return $this->belongsTo(User::class, 'leader_id');
+     }
 }
